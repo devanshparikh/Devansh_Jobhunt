@@ -231,7 +231,8 @@ tr:last-child td{border-bottom:none}
   <button class="nav-tab" onclick="showTab('aitools',7)">AI Tools</button>
   <button class="nav-tab" onclick="showTab('planning',8)">Planning</button>
   <button class="nav-tab" onclick="showTab('motivation',9)">Motivation</button>
-  <button class="nav-tab" onclick="showTab('settings',10)">Settings</button>
+  <button class="nav-tab" onclick="showTab('jobboard',10)">🌐 Job Board <span class="tab-badge" id="jbBadge" style="display:none">0</span></button>
+  <button class="nav-tab" onclick="showTab('settings',11)">Settings</button>
 </div>
 
 <div id="main">
@@ -526,7 +527,72 @@ service cloud.firestore {
   </div>
 </div>
 
+<!-- JOB BOARD -->
+<div class="tab-content" id="tab-jobboard">
+  <div class="card" style="margin-bottom:16px">
+    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px">
+      <div>
+        <h3 style="margin-bottom:4px">🌐 Live Job Board</h3>
+        <div style="font-size:12px;color:var(--text3)">Sources: Arbeitnow · Remotive · Jobicy · Indeed Canada (via RSS) — filtered for Embedded / Automotive / Canada / Remote</div>
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+        <select id="jbSource" style="max-width:160px" onchange="filterJBResults()">
+          <option value="">All Sources</option>
+          <option value="Arbeitnow">Arbeitnow</option>
+          <option value="Remotive">Remotive</option>
+          <option value="Jobicy">Jobicy</option>
+          <option value="Indeed CA">Indeed CA</option>
+        </select>
+        <select id="jbLocation" style="max-width:160px" onchange="filterJBResults()">
+          <option value="">Canada + Remote</option>
+          <option value="canada">Canada Only</option>
+          <option value="remote">Remote Only</option>
+        </select>
+        <button class="btn btn-gold" onclick="fetchAllJobs()">🔍 Search Jobs</button>
+        <button class="btn btn-sm" onclick="filterJBResults()">Filter</button>
+      </div>
+    </div>
+    <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+      <input id="jbKeyword" placeholder="Filter: embedded, MCAL, automotive…" style="max-width:280px" oninput="filterJBResults()">
+      <span id="jbCount" style="font-size:12px;color:var(--text3)"></span>
+      <span id="jbLastFetch" style="font-size:12px;color:var(--text3)"></span>
+    </div>
+  </div>
+  <div id="jbStatus" style="display:none" class="warn-card"></div>
+  <div id="jbLoading" style="display:none;text-align:center;padding:40px;color:var(--text3)">
+    <div style="font-size:32px;margin-bottom:12px">⏳</div>
+    <div id="jbLoadingMsg">Fetching jobs from multiple sources…</div>
+    <div style="margin-top:8px;font-size:12px;color:var(--text3)" id="jbLoadingDetail"></div>
+  </div>
+  <div id="jbResults"></div>
+</div>
+
 </div><!-- /main -->
+
+<!-- APPLY MODAL -->
+<div class="modal-overlay" id="mApply">
+  <div class="modal" style="width:min(680px,96vw)">
+    <div class="modal-header"><h3>📧 Apply — Preview & Confirm</h3><button class="modal-close" onclick="closeModal('mApply')">✕</button></div>
+    <div class="modal-body">
+      <div style="background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:16px">
+        <div style="font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--text3);margin-bottom:6px">JOB</div>
+        <div id="applyJobTitle" style="font-weight:700;font-size:15px;margin-bottom:2px"></div>
+        <div id="applyJobCompany" style="font-size:13px;color:var(--text2);margin-bottom:4px"></div>
+        <div id="applyJobMeta" style="font-size:12px;color:var(--text3)"></div>
+      </div>
+      <div class="form-group"><label>To (HR Email)</label><input id="applyTo" placeholder="careers@company.com (optional — leave blank to open job URL)"></div>
+      <div class="form-group"><label>Subject</label><input id="applySubject"></div>
+      <div class="form-group"><label>Body</label><textarea id="applyBody" rows="10"></textarea></div>
+      <div class="form-group"><label>CV Version</label><select id="applyCVSel"></select></div>
+      <div id="applyNoGmail" style="display:none" class="warn-card" style="margin-top:8px">⚠️ Gmail not connected — email will open in your mail client instead.</div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn" onclick="closeModal('mApply')">Cancel</button>
+      <button class="btn btn-sm" onclick="openJobURL()">🔗 Open Job Page</button>
+      <button class="btn btn-gold" onclick="confirmAndApply()">✅ Confirm & Send</button>
+    </div>
+  </div>
+</div>
 
 <!-- MODALS -->
 <div class="modal-overlay" id="mJob">
@@ -747,6 +813,7 @@ function showTab(name,idx){
   if(name==='aitools')checkAIKey();
   if(name==='planning')renderPlanning();
   if(name==='motivation')renderMotivation();
+  if(name==='jobboard')initJobBoard();
   if(name==='settings')loadSettings();
   if(name!=='email'&&_autoSaveInterval){clearInterval(_autoSaveInterval);_autoSaveInterval=null;}
 }
@@ -2174,7 +2241,313 @@ function clearAll(){
 }
 
 // ═══════════════════════════════════════════════════════
-// INIT
+// JOB BOARD
+// ═══════════════════════════════════════════════════════
+let _jbAllJobs=[];let _jbFiltered=[];let _jbApplyJob=null;
+
+const JB_KEYWORDS=['embedded','mcal','autosar','automotive','firmware','microcontroller','rtos','can bus','iso 26262','hal driver','ecu','aurix','arm cortex','stm32','pic','fpga','vhdl','verilog','plc','scada','functional safety','aspice','powertrain','inverter','drivetrain','electric vehicle','ev','adas','telematics','vehicle','motor control'];
+const JB_LOCATION_KEYWORDS=['canada','ontario','ottawa','toronto','montreal','vancouver','calgary','edmonton','waterloo','remote','worldwide','anywhere'];
+
+function initJobBoard(){
+  const last=lsGet('jt2_jb_lastfetch');
+  if(last){document.getElementById('jbLastFetch').textContent='Last fetched: '+new Date(last).toLocaleString();}
+  const cached=LS.get('jt2_jb_jobs',[]);
+  if(cached.length){_jbAllJobs=cached;filterJBResults();}
+  else{document.getElementById('jbResults').innerHTML='<div style="text-align:center;padding:40px;color:var(--text3)"><div style="font-size:36px;margin-bottom:12px">🔍</div><div style="font-size:15px;font-weight:600">Click "Search Jobs" to fetch live listings</div><div style="font-size:13px;margin-top:6px;color:var(--text3)">Searches Arbeitnow, Remotive, Jobicy for embedded/automotive roles in Canada & Remote</div></div>';}
+}
+
+async function fetchAllJobs(){
+  const loadDiv=document.getElementById('jbLoading');
+  const statusDiv=document.getElementById('jbStatus');
+  const resultsDiv=document.getElementById('jbResults');
+  loadDiv.style.display='';statusDiv.style.display='none';resultsDiv.innerHTML='';
+  _jbAllJobs=[];
+  const sources=[
+    {name:'Arbeitnow',fn:fetchArbeitnow},
+    {name:'Remotive',fn:fetchRemotive},
+    {name:'Jobicy',fn:fetchJobicy},
+    {name:'Indeed CA',fn:fetchIndeedCA},
+  ];
+  let totalFound=0;
+  for(const src of sources){
+    document.getElementById('jbLoadingMsg').textContent='Fetching from '+src.name+'…';
+    document.getElementById('jbLoadingDetail').textContent=totalFound+' jobs found so far';
+    try{
+      const jobs=await src.fn();
+      _jbAllJobs.push(...jobs);
+      totalFound+=jobs.length;
+      document.getElementById('jbLoadingDetail').textContent='✅ '+src.name+': '+jobs.length+' jobs · Total: '+totalFound;
+    }catch(e){
+      document.getElementById('jbLoadingDetail').textContent='⚠️ '+src.name+' failed: '+e.message;
+      await new Promise(r=>setTimeout(r,600));
+    }
+  }
+  loadDiv.style.display='none';
+  lsSet('jt2_jb_lastfetch',new Date().toISOString());
+  lsSet('jt2_jb_jobs',_jbAllJobs.slice(0,300));// cap storage
+  document.getElementById('jbLastFetch').textContent='Last fetched: '+new Date().toLocaleString();
+  filterJBResults();
+  toast('Found '+_jbAllJobs.length+' jobs','success');
+}
+
+// ── ARBEITNOW (free, no key, CORS ok) ──
+async function fetchArbeitnow(){
+  const pages=[1,2,3];let all=[];
+  for(const page of pages){
+    const r=await fetch(`https://www.arbeitnow.com/api/job-board-api?page=${page}`);
+    if(!r.ok)break;
+    const d=await r.json();
+    const jobs=(d.data||[]).filter(j=>isRelevantJob(j.title+' '+(j.description||''))).map(j=>({
+      id:'an_'+j.slug,title:j.title,company:j.company_name,location:j.location||'Remote',
+      type:j.job_types?j.job_types.join(', '):'',url:j.url,description:(j.description||'').slice(0,400),
+      source:'Arbeitnow',posted:j.created_at?new Date(j.created_at*1000).toISOString().slice(0,10):'',
+      remote:j.remote||false,tags:(j.tags||[]).join(', ')
+    }));
+    all.push(...jobs);
+    if(!d.data||d.data.length<25)break;
+  }
+  return all;
+}
+
+// ── REMOTIVE (free, remote jobs) ──
+async function fetchRemotive(){
+  const queries=['embedded','firmware','automotive','microcontroller'];
+  let all=[];const seen=new Set();
+  for(const q of queries){
+    try{
+      const r=await fetch(`https://remotive.com/api/remote-jobs?search=${encodeURIComponent(q)}&limit=50`);
+      if(!r.ok)continue;
+      const d=await r.json();
+      const jobs=(d.jobs||[]).filter(j=>!seen.has(j.id)&&isRelevantJob(j.title+' '+(j.description||''))).map(j=>{seen.add(j.id);return{
+        id:'rm_'+j.id,title:j.title,company:j.company_name,location:'Remote',
+        type:j.job_type||'Remote',url:j.url,description:(j.description||'').replace(/<[^>]*>/g,'').slice(0,400),
+        source:'Remotive',posted:j.publication_date?j.publication_date.slice(0,10):'',
+        remote:true,tags:(j.tags||[]).join(', ')
+      };});
+      all.push(...jobs);
+    }catch(e){}
+  }
+  return all;
+}
+
+// ── JOBICY (free, remote + global) ──
+async function fetchJobicy(){
+  try{
+    const r=await fetch('https://jobicy.com/api/v2/remote-jobs?count=50&industry=engineering&tag=embedded');
+    if(!r.ok)throw new Error('HTTP '+r.status);
+    const d=await r.json();
+    return(d.jobs||[]).filter(j=>isRelevantJob(j.jobTitle+' '+(j.jobDescription||'')+(j.jobIndustry||''))).map(j=>({
+      id:'jy_'+j.id,title:j.jobTitle,company:j.companyName,location:j.jobGeo||'Remote',
+      type:j.jobType||'Remote',url:j.url,description:(j.jobDescription||'').replace(/<[^>]*>/g,'').slice(0,400),
+      source:'Jobicy',posted:j.pubDate?j.pubDate.slice(0,10):'',remote:true,tags:''
+    }));
+  }catch(e){
+    // fallback broader search
+    const r2=await fetch('https://jobicy.com/api/v2/remote-jobs?count=50&industry=engineering');
+    if(!r2.ok)throw new Error('Jobicy unavailable');
+    const d2=await r2.json();
+    return(d2.jobs||[]).filter(j=>isRelevantJob(j.jobTitle+' '+(j.jobDescription||''))).map(j=>({
+      id:'jy_'+j.id,title:j.jobTitle,company:j.companyName,location:j.jobGeo||'Remote',
+      type:j.jobType||'Remote',url:j.url,description:(j.jobDescription||'').replace(/<[^>]*>/g,'').slice(0,400),
+      source:'Jobicy',posted:j.pubDate?j.pubDate.slice(0,10):'',remote:true,tags:''
+    }));
+  }
+}
+
+// ── INDEED CA via RSS proxy (CORS-safe) ──
+async function fetchIndeedCA(){
+  const searches=[
+    'embedded+software+engineer+canada',
+    'firmware+engineer+canada',
+    'automotive+embedded+canada',
+    'MCAL+developer+canada',
+    'embedded+systems+remote+canada'
+  ];
+  let all=[];const seen=new Set();
+  const proxy='https://api.rss2json.com/v1/api.json?rss_url=';
+  for(const q of searches){
+    try{
+      const rssUrl=encodeURIComponent(`https://ca.indeed.com/rss?q=${q}&l=Canada&sort=date&limit=25`);
+      const r=await fetch(proxy+rssUrl);
+      if(!r.ok)continue;
+      const d=await r.json();
+      const items=d.items||[];
+      const jobs=items.filter(item=>!seen.has(item.link)&&isRelevantJob(item.title+' '+(item.description||''))).map(item=>{
+        seen.add(item.link);
+        const desc=(item.description||'').replace(/<[^>]*>/g,'').slice(0,400);
+        // Parse company from title (Indeed format: "Job Title - Company")
+        const parts=item.title.split(' - ');
+        const title=parts[0]||item.title;
+        const company=parts[1]||'See listing';
+        return{
+          id:'in_'+btoa(item.link).slice(0,12),title,company,
+          location:parts[2]||'Canada',type:'Full-time',url:item.link,
+          description:desc,source:'Indeed CA',
+          posted:item.pubDate?item.pubDate.slice(0,10):'',remote:item.title.toLowerCase().includes('remote'),tags:''
+        };
+      });
+      all.push(...jobs);
+    }catch(e){}
+    await new Promise(r=>setTimeout(r,300));// rate limit
+  }
+  return all;
+}
+
+function isRelevantJob(text){
+  const t=text.toLowerCase();
+  return JB_KEYWORDS.some(kw=>t.includes(kw));
+}
+
+function isCanadaOrRemote(job){
+  const loc=(job.location||'').toLowerCase();
+  const desc=(job.description||'').toLowerCase();
+  const title=(job.title||'').toLowerCase();
+  if(job.remote)return true;
+  return JB_LOCATION_KEYWORDS.some(kw=>loc.includes(kw)||desc.includes(kw)||title.includes(kw));
+}
+
+function filterJBResults(){
+  const kw=(document.getElementById('jbKeyword').value||'').toLowerCase();
+  const src=document.getElementById('jbSource').value;
+  const locF=document.getElementById('jbLocation').value;
+  _jbFiltered=_jbAllJobs.filter(j=>{
+    if(src&&j.source!==src)return false;
+    if(locF==='canada'&&j.remote)return false;
+    if(locF==='remote'&&!j.remote)return false;
+    if(!isCanadaOrRemote(j))return false;
+    if(kw){const hay=(j.title+' '+j.company+' '+j.description+' '+j.tags).toLowerCase();if(!hay.includes(kw))return false;}
+    return true;
+  });
+  // Dedupe by title+company
+  const seen=new Set();
+  _jbFiltered=_jbFiltered.filter(j=>{const k=(j.title+j.company).toLowerCase().replace(/\s/g,'');if(seen.has(k))return false;seen.add(k);return true;});
+  document.getElementById('jbCount').textContent=_jbFiltered.length+' jobs found';
+  const badge=document.getElementById('jbBadge');
+  badge.textContent=_jbFiltered.length;badge.style.display=_jbFiltered.length?'':'none';
+  renderJBResults();
+}
+
+function renderJBResults(){
+  const d=document.getElementById('jbResults');
+  if(!_jbFiltered.length){
+    d.innerHTML='<div style="text-align:center;padding:40px;color:var(--text3)"><div style="font-size:32px;margin-bottom:10px">🔍</div><div>No matching jobs. Try clicking "Search Jobs" or adjust filters.</div></div>';
+    return;
+  }
+  d.innerHTML=_jbFiltered.map((j,i)=>{
+    const srcColor={Arbeitnow:'#3b82f6',Remotive:'#22c55e',Jobicy:'#a78bfa','Indeed CA':'#f59e0b'}[j.source]||'var(--text3)';
+    const isApplied=jobs.some(x=>x.url===j.url||((x.company||'').toLowerCase()===(j.company||'').toLowerCase()&&(x.role||'').toLowerCase()===(j.title||'').toLowerCase()));
+    return`<div class="card" style="margin-bottom:12px;${isApplied?'border-color:rgba(34,197,94,0.3)':''}">
+      <div style="display:flex;align-items:start;justify-content:space-between;gap:12px;flex-wrap:wrap">
+        <div style="flex:1;min-width:0">
+          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:4px">
+            <span style="font-size:11px;font-weight:700;color:${srcColor};border:1px solid ${srcColor};padding:2px 8px;border-radius:10px;opacity:0.85">${j.source}</span>
+            ${j.remote?'<span style="font-size:11px;background:rgba(34,197,94,0.1);color:var(--green);padding:2px 8px;border-radius:10px;font-weight:600">🌐 Remote</span>':''}
+            ${isApplied?'<span style="font-size:11px;background:rgba(34,197,94,0.1);color:var(--green);padding:2px 8px;border-radius:10px;font-weight:600">✅ Applied</span>':''}
+            ${j.posted?`<span style="font-size:11px;color:var(--text3)">${j.posted}</span>`:''}
+          </div>
+          <div style="font-size:15px;font-weight:700;margin-bottom:2px">${j.title}</div>
+          <div style="font-size:13px;color:var(--gold);font-weight:600;margin-bottom:4px">${j.company}</div>
+          <div style="font-size:12px;color:var(--text3);margin-bottom:8px">📍 ${j.location}${j.type?' · '+j.type:''}</div>
+          <div style="font-size:12px;color:var(--text2);line-height:1.6;max-height:60px;overflow:hidden">${j.description}</div>
+          ${j.tags?`<div style="font-size:11px;color:var(--text3);margin-top:6px">🏷 ${j.tags}</div>`:''}
+        </div>
+        <div style="display:flex;flex-direction:column;gap:6px;flex-shrink:0">
+          <button class="btn btn-gold btn-sm" onclick="openApplyModal(${i})">📧 Apply</button>
+          <a href="${j.url}" target="_blank" class="btn btn-sm" style="text-align:center;text-decoration:none">🔗 View</a>
+          <button class="btn btn-sm" onclick="saveJBJobToTracker(${i})">+ Track</button>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function openApplyModal(idx){
+  const j=_jbFiltered[idx];if(!j)return;
+  _jbApplyJob=j;
+  document.getElementById('applyJobTitle').textContent=j.title;
+  document.getElementById('applyJobCompany').textContent=j.company;
+  document.getElementById('applyJobMeta').textContent='📍 '+j.location+' · '+j.source+(j.posted?' · '+j.posted:'');
+  // Build email
+  const name=profile.name||'Devansh Parikh';
+  const exp=profile.exp||'8+ years in Automotive Embedded';
+  const phone=profile.phone||'+1(343)558-4654';
+  const linkedin=profile.linkedin||'linkedin.com/in/parikhdevansh4295/';
+  document.getElementById('applySubject').value=`Application for ${j.title} – ${name} | ${exp} Automotive Experience`;
+  document.getElementById('applyBody').value=`Dear Hiring Team,\n\nI am writing to express my strong interest in the ${j.title} position at ${j.company}.\n\nWith ${exp} in the automotive industry, I bring hands-on expertise across the full V-model lifecycle — MCAL/HAL driver development, AURIX TC2xx/TC3xx microcontrollers, communication protocols (CAN, SPI, UART, I2C), functional safety (ISO 26262 Level 1 certified), and ASPICE compliance. My background includes embedded C development, HIL test bench setup, and cross-functional collaboration with OEMs and Tier-1 suppliers.\n\nI am based in Ottawa, Canada and hold a valid Work Permit with PR in process — available to join immediately.\n\nI have attached my CV for your reference and would welcome the opportunity to discuss how my expertise aligns with your team's goals.\n\nRegards,\n${name}\n${phone} | ${linkedin}`;
+  // CV selector
+  const sel=document.getElementById('applyCVSel');
+  sel.innerHTML=cvVersions.length?cvVersions.map(v=>`<option value="${v.id}" ${v.isDefault?'selected':''}>${v.label||v.name}</option>`).join(''):'<option value="">No CV uploaded</option>';
+  document.getElementById('applyTo').value='';
+  document.getElementById('applyNoGmail').style.display=_gmailToken?'none':'';
+  openModal('mApply');
+}
+
+function openJobURL(){if(_jbApplyJob)window.open(_jbApplyJob.url,'_blank');}
+
+async function confirmAndApply(){
+  const to=document.getElementById('applyTo').value.trim();
+  const subject=document.getElementById('applySubject').value.trim();
+  const body=document.getElementById('applyBody').value.trim();
+  const cvId=document.getElementById('applyCVSel').value;
+  const cv=cvVersions.find(v=>v.id===cvId)||cvVersions.find(v=>v.isDefault)||cvVersions[0];
+  const j=_jbApplyJob;
+  if(!subject||!body){toast('Subject and body required','error');return;}
+  if(!to&&!_gmailToken){
+    // Fallback: mailto
+    const mailto=`mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+    window.open(mailto);
+    window.open(j.url,'_blank');
+    logJBApplication(j,to||'(via job page)');
+    closeModal('mApply');
+    toast('Opened mail client + job page','info');
+    return;
+  }
+  if(!to){
+    // No email — open job page
+    if(!confirm('No HR email entered — will open the job page so you can apply there. Continue?'))return;
+    window.open(j.url,'_blank');
+    logJBApplication(j,'(via job page)');
+    closeModal('mApply');
+    toast('Opening job page to apply manually','info');
+    return;
+  }
+  // Send via Gmail
+  if(!_gmailToken){toast('Gmail not connected — go to Settings','error');return;}
+  try{
+    await sendViaGmail(to,subject,body,cv);
+    logJBApplication(j,to);
+    closeModal('mApply');
+    toast('Application sent to '+to,'success');
+    renderJBResults();// refresh to show Applied badge
+  }catch(e){toast('Send failed: '+e.message,'error');}
+}
+
+function logJBApplication(j,to){
+  // Add to sent log
+  const entry={id:uid(),to:to||j.url,subject:document.getElementById('applySubject').value,cvLabel:'',linkedJob:'',sent:Date.now(),isBulk:false,fromJobBoard:true};
+  sentLog.unshift(entry);if(sentLog.length>25)sentLog=sentLog.slice(0,25);LS.set('jt2_sent',sentLog);
+  // Add to job tracker
+  const already=jobs.find(x=>x.url===j.url);
+  if(!already){
+    const job={id:uid(),company:j.company,role:j.title,platform:j.source,status:'Applied',location:j.location,ctc:'',applied:new Date().toISOString().slice(0,10),followup:'',priority:'Normal',round:'',url:j.url,contactId:'',notes:'Applied via Job Board',jd:j.description,updated:Date.now()};
+    jobs.unshift(job);LS.set('jt2_jobs',jobs);
+    if(FB.ok)fbOp(FB.db.collection('jobs').doc(job.id).set(job));
+    updateBadge();
+  }
+}
+
+function saveJBJobToTracker(idx){
+  const j=_jbFiltered[idx];if(!j)return;
+  const already=jobs.find(x=>x.url===j.url);
+  if(already){toast('Already in tracker','info');return;}
+  const job={id:uid(),company:j.company,role:j.title,platform:j.source,status:'Saved',location:j.location,ctc:'',applied:'',followup:'',priority:'Normal',round:'',url:j.url,contactId:'',notes:'From Job Board',jd:j.description,updated:Date.now()};
+  jobs.unshift(job);LS.set('jt2_jobs',jobs);
+  if(FB.ok)fbOp(FB.db.collection('jobs').doc(job.id).set(job));
+  updateBadge();toast('Saved to tracker','success');
+  renderJBResults();
+}
+
+// ═══════════════════════════════════════════════════════
 // ═══════════════════════════════════════════════════════
 function init(){
   loadTheme();

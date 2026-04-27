@@ -2028,30 +2028,47 @@ function copyDomain(){navigator.clipboard.writeText(window.location.hostname);to
 function copyRules(){navigator.clipboard.writeText("rules_version = '2';\nservice cloud.firestore {\n  match /databases/{database}/documents {\n    match /{document=**} {\n      allow read, write: if true;\n    }\n  }\n}");toast('Rules copied','success');}
 
 // ═══════════════════════════════════════════════════════
-// SETTINGS — GMAIL
+// SETTINGS — GMAIL (Google Identity Services)
 // ═══════════════════════════════════════════════════════
+let _gisClient=null;
+
 function connectGmail(){
   const clientId=document.getElementById('gmailClientId').value.trim();
   if(!clientId){toast('Enter Gmail Client ID first','error');return;}
   lsSet('jt2_gmail_client_id',clientId);
-  // Load Google API
-  const initGapi=()=>{
-    gapi.load('client:auth2',()=>{
-      gapi.auth2.init({client_id:clientId,scope:'https://www.googleapis.com/auth/gmail.send'}).then(auth=>{
-        auth.signIn().then(user=>{
-          _gmailToken=user.getAuthResponse().access_token;
+  toast('Opening Google sign-in…','info');
+  const doAuth=()=>{
+    try{
+      _gisClient=google.accounts.oauth2.initTokenClient({
+        client_id:clientId,
+        scope:'https://www.googleapis.com/auth/gmail.send',
+        callback:(resp)=>{
+          if(resp.error){toast('Gmail error: '+resp.error,'error');return;}
+          _gmailToken=resp.access_token;
           document.getElementById('gmailPill').style.display='';
           document.getElementById('gmailDiscoBtn').style.display='inline-block';
           toast('Gmail connected!','success');
-        }).catch(e=>toast('Gmail sign-in failed: '+e.error,'error'));
+        }
       });
-    });
+      _gisClient.requestAccessToken({prompt:'consent'});
+    }catch(e){toast('Gmail init failed: '+e.message,'error');}
   };
-  if(!window.gapi){const s=document.createElement('script');s.src='https://apis.google.com/js/api.js';s.onload=initGapi;document.head.appendChild(s);}
-  else initGapi();
+  if(!window.google||!window.google.accounts){
+    const s=document.createElement('script');
+    s.src='https://accounts.google.com/gsi/client';
+    s.onload=doAuth;
+    s.onerror=()=>toast('Failed to load Google sign-in library','error');
+    document.head.appendChild(s);
+  }else doAuth();
 }
 
-function disconnectGmail(){_gmailToken=null;document.getElementById('gmailPill').style.display='none';document.getElementById('gmailDiscoBtn').style.display='none';toast('Gmail disconnected');}
+function disconnectGmail(){
+  if(_gisClient)try{google.accounts.oauth2.revoke(_gmailToken,()=>{});}catch(e){}
+  _gmailToken=null;_gisClient=null;
+  document.getElementById('gmailPill').style.display='none';
+  document.getElementById('gmailDiscoBtn').style.display='none';
+  toast('Gmail disconnected');
+}
 
 // ═══════════════════════════════════════════════════════
 // SETTINGS — GROQ & GEMINI

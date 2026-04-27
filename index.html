@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Job Tracker — Devansh Parikh</title>
+<title>Job Tracker - Devansh Parikh</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
@@ -193,12 +193,11 @@ tr:last-child td{border-bottom:none}
       <div class="pin-dot" id="d4"></div><div class="pin-dot" id="d5"></div>
     </div>
     <div class="pin-err" id="pinErr"></div>
-    <div class="pin-numpad">
-      <button class="pin-key" onclick="pinKey('1')">1</button><button class="pin-key" onclick="pinKey('2')">2</button><button class="pin-key" onclick="pinKey('3')">3</button>
-      <button class="pin-key" onclick="pinKey('4')">4</button><button class="pin-key" onclick="pinKey('5')">5</button><button class="pin-key" onclick="pinKey('6')">6</button>
-      <button class="pin-key" onclick="pinKey('7')">7</button><button class="pin-key" onclick="pinKey('8')">8</button><button class="pin-key" onclick="pinKey('9')">9</button>
-      <button class="pin-key" onclick="pinKey('back')" style="font-size:14px">⌫</button><button class="pin-key" onclick="pinKey('0')">0</button><button class="pin-key" onclick="pinKey('clear')" style="font-size:12px">CLR</button>
-    </div>
+    <input id="pinInput" type="password" inputmode="numeric" pattern="[0-9]*" maxlength="6"
+      autocomplete="off" placeholder="______"
+      style="font-size:28px;letter-spacing:12px;text-align:center;width:100%;background:var(--bg3);border:2px solid var(--border);border-radius:12px;padding:14px;color:var(--text);margin-bottom:12px;outline:none;transition:border-color .2s"
+      oninput="pinFromInput(this.value)" onkeydown="if(event.key==='Enter')pinSubmit()">
+    <button class="btn btn-gold" style="width:100%;padding:12px;font-size:15px;margin-bottom:12px" onclick="pinSubmit()">Unlock &#9166;</button>
     <div class="pin-links"><a onclick="pinSkip()">Skip for now</a><a onclick="pinForgot()" id="pinForgotLink" style="display:none">Forgot PIN</a></div>
   </div>
 </div>
@@ -489,13 +488,13 @@ service cloud.firestore {
     <div style="display:flex;gap:8px"><button class="btn btn-gold" onclick="connectGmail()">Connect Gmail</button><button class="btn btn-danger btn-sm" id="gmailDiscoBtn" style="display:none" onclick="disconnectGmail()">Disconnect</button></div>
   </div>
   <div class="settings-sec">
-    <h3>🤖 Groq API Key <span style="font-size:11px;color:var(--green);font-weight:400">(FREE — 14,400 req/day)</span></h3>
+    <h3>🤖 Groq API Key <span style="font-size:11px;color:var(--green);font-weight:400">(FREE - 14,400 req/day)</span></h3>
     <div class="form-group"><label>Groq API Key</label><input id="groqKey" type="password" placeholder="gsk_…"></div>
     <button class="btn btn-gold" onclick="saveGroq()">Save &amp; Test</button>
     <div id="groqStatus" style="font-size:12px;margin-top:8px"></div>
   </div>
   <div class="settings-sec">
-    <h3>🌟 Gemini Vision Key <span style="font-size:11px;color:var(--text3);font-weight:400">(Optional — image extraction)</span></h3>
+    <h3>🌟 Gemini Vision Key <span style="font-size:11px;color:var(--text3);font-weight:400">(Optional - image extraction)</span></h3>
     <div class="form-group"><label>Gemini API Key</label><input id="geminiKey" type="password" placeholder="AIza…"></div>
     <button class="btn btn-sm" onclick="saveGemini()">Save</button>
   </div>
@@ -533,7 +532,7 @@ service cloud.firestore {
     <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px">
       <div>
         <h3 style="margin-bottom:4px">🌐 Live Job Board</h3>
-        <div style="font-size:12px;color:var(--text3)">Sources: Arbeitnow · Remotive · Jobicy · Indeed Canada (via RSS) — filtered for Embedded / Automotive / Canada / Remote</div>
+        <div style="font-size:12px;color:var(--text3)">Sources: Arbeitnow · Remotive · Jobicy · Indeed Canada (via RSS) - filtered for Embedded / Automotive / Canada / Remote</div>
       </div>
       <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
         <select id="jbSource" style="max-width:160px" onchange="filterJBResults()">
@@ -572,7 +571,7 @@ service cloud.firestore {
 <!-- APPLY MODAL -->
 <div class="modal-overlay" id="mApply">
   <div class="modal" style="width:min(680px,96vw)">
-    <div class="modal-header"><h3>📧 Apply — Preview & Confirm</h3><button class="modal-close" onclick="closeModal('mApply')">✕</button></div>
+    <div class="modal-header"><h3>📧 Apply - Preview & Confirm</h3><button class="modal-close" onclick="closeModal('mApply')">✕</button></div>
     <div class="modal-body">
       <div style="background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:16px">
         <div style="font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--text3);margin-bottom:6px">JOB</div>
@@ -580,11 +579,11 @@ service cloud.firestore {
         <div id="applyJobCompany" style="font-size:13px;color:var(--text2);margin-bottom:4px"></div>
         <div id="applyJobMeta" style="font-size:12px;color:var(--text3)"></div>
       </div>
-      <div class="form-group"><label>To (HR Email)</label><input id="applyTo" placeholder="careers@company.com (optional — leave blank to open job URL)"></div>
+      <div class="form-group"><label>To (HR Email)</label><input id="applyTo" placeholder="careers@company.com (optional - leave blank to open job URL)"></div>
       <div class="form-group"><label>Subject</label><input id="applySubject"></div>
       <div class="form-group"><label>Body</label><textarea id="applyBody" rows="10"></textarea></div>
       <div class="form-group"><label>CV Version</label><select id="applyCVSel"></select></div>
-      <div id="applyNoGmail" style="display:none" class="warn-card" style="margin-top:8px">⚠️ Gmail not connected — email will open in your mail client instead.</div>
+      <div id="applyNoGmail" style="display:none" class="warn-card" style="margin-top:8px">⚠️ Gmail not connected - email will open in your mail client instead.</div>
     </div>
     <div class="modal-footer">
       <button class="btn" onclick="closeModal('mApply')">Cancel</button>
@@ -602,7 +601,7 @@ service cloud.firestore {
     <div class="form-row"><div class="form-group"><label>Platform</label><select id="jPlat"><option>LinkedIn</option><option>Indeed</option><option>Company Site</option><option>Glassdoor</option><option>Referral</option><option>Other</option></select></div><div class="form-group"><label>Status</label><select id="jStatus"><option>Saved</option><option>Applied</option><option>Screening</option><option>Interview</option><option>Offer</option><option>Rejected</option></select></div></div>
     <div class="form-row"><div class="form-group"><label>Location</label><input id="jLoc" placeholder="Ottawa, ON / Remote"></div><div class="form-group"><label>CTC / Salary</label><input id="jCTC" placeholder="$110K–$130K"></div></div>
     <div class="form-row"><div class="form-group"><label>Applied Date</label><input type="date" id="jApplied"></div><div class="form-group"><label>Follow-up Date</label><input type="date" id="jFollowup"></div></div>
-    <div class="form-row"><div class="form-group"><label>Priority</label><select id="jPri"><option>Normal</option><option>High</option></select></div><div class="form-group"><label>Interview Round</label><select id="jRound"><option value="">—</option><option>Phone Screen</option><option>Technical L1</option><option>Technical L2</option><option>Managerial</option><option>HR Final</option><option>Offer Stage</option></select></div></div>
+    <div class="form-row"><div class="form-group"><label>Priority</label><select id="jPri"><option>Normal</option><option>High</option></select></div><div class="form-group"><label>Interview Round</label><select id="jRound"><option value="">-</option><option>Phone Screen</option><option>Technical L1</option><option>Technical L2</option><option>Managerial</option><option>HR Final</option><option>Offer Stage</option></select></div></div>
     <div class="form-group"><label>Job URL</label><input id="jUrl" placeholder="https://…"></div>
     <div class="form-group"><label>Linked HR Contact</label><select id="jContact"><option value="">None</option></select></div>
     <div class="form-group"><label>Notes</label><textarea id="jNotes" rows="3" placeholder="Notes…"></textarea></div>
@@ -735,7 +734,7 @@ const FB={db:null,connected:false,listenersOn:false,appReady:false,unsubs:[],get
 
 function fbOp(promise,timeoutMs=8000){
   return new Promise(resolve=>{
-    const timer=setTimeout(()=>resolve({ok:false,code:'timeout',msg:'Firestore timed out — check Authorized Domains'}),timeoutMs);
+    const timer=setTimeout(()=>resolve({ok:false,code:'timeout',msg:'Firestore timed out - check Authorized Domains'}),timeoutMs);
     promise.then(()=>{clearTimeout(timer);resolve({ok:true});}).catch(e=>{clearTimeout(timer);resolve({ok:false,code:e.code||'error',msg:e.message});});
   });
 }
@@ -749,43 +748,51 @@ function djb2(s){let h=5381;for(let i=0;i<s.length;i++)h=((h<<5)+h)+s.charCodeAt
 function initPin(){
   const stored=lsGet('jt2_pin_hash');
   document.getElementById('pinForgotLink').style.display=stored?'inline':'none';
-  if(!stored){pinMode='set';document.getElementById('pinMsg').textContent='Set a 6-digit PIN to protect your data';}
-  else{pinMode='enter';document.getElementById('pinMsg').textContent='Enter your 6-digit PIN to unlock';}
+  if(!stored){pinMode='set';document.getElementById('pinMsg').textContent='Set a 6-digit PIN - type on keyboard or tap';}
+  else{pinMode='enter';document.getElementById('pinMsg').textContent='Enter your PIN - type on keyboard or tap';}
+  pinBuf='';
+  const inp=document.getElementById('pinInput');
+  inp.value='';
+  setTimeout(()=>inp.focus(),100);
+}
+function pinFromInput(val){
+  // Only allow digits, max 6
+  const clean=val.replace(/[^0-9]/g,'').slice(0,6);
+  document.getElementById('pinInput').value=clean;
+  pinBuf=clean;
+  document.getElementById('pinErr').textContent='';
   updateDots();
-  document.addEventListener('keydown',function pinKbHandler(e){
-    const overlay=document.getElementById('pinOverlay');
-    if(!overlay||overlay.style.display==='none'){document.removeEventListener('keydown',pinKbHandler);return;}
-    if(e.key>='0'&&e.key<='9'){e.preventDefault();pinKey(e.key);}
-    else if(e.key==='Backspace'){e.preventDefault();pinKey('back');}
-    else if(e.key==='Escape'){e.preventDefault();pinKey('clear');}
-    else if(e.key==='Enter'&&pinBuf.length===6){e.preventDefault();pinSubmit();}
-  });
+  if(clean.length===6) setTimeout(()=>pinSubmit(),150);
 }
 function pinKey(k){
-  const err=document.getElementById('pinErr');
-  if(k==='back'){pinBuf=pinBuf.slice(0,-1);}
-  else if(k==='clear'){pinBuf='';}
-  else if(pinBuf.length<6){pinBuf+=k;}
+  // Still called by old code paths - proxy to input
+  const inp=document.getElementById('pinInput');
+  if(k==='back') pinBuf=pinBuf.slice(0,-1);
+  else if(k==='clear') pinBuf='';
+  else if(pinBuf.length<6) pinBuf+=k;
+  inp.value=pinBuf;
+  document.getElementById('pinErr').textContent='';
   updateDots();
-  err.textContent='';
-  if(pinBuf.length===6) setTimeout(()=>pinSubmit(),120);
+  if(pinBuf.length===6) setTimeout(()=>pinSubmit(),150);
 }
 function updateDots(){for(let i=0;i<6;i++)document.getElementById('d'+i).classList.toggle('filled',i<pinBuf.length);}
 function pinSubmit(){
   const err=document.getElementById('pinErr');
-  if(pinMode==='set'){pinFirst=pinBuf;pinBuf='';pinMode='confirm';document.getElementById('pinMsg').textContent='Confirm your PIN';updateDots();}
+  if(pinMode==='set'){pinFirst=pinBuf;pinBuf='';pinMode='confirm';document.getElementById('pinMsg').textContent='Confirm your PIN - type again';const inp=document.getElementById('pinInput');inp.value='';updateDots();setTimeout(()=>inp.focus(),50);}
   else if(pinMode==='confirm'){
-    if(pinBuf===pinFirst){lsSet('jt2_pin_hash',djb2(pinBuf).toString());unlockApp();}
-    else{err.textContent='PINs do not match. Try again.';pinBuf='';pinFirst='';pinMode='set';document.getElementById('pinMsg').textContent='Set a 6-digit PIN';updateDots();}
+    if(pinBuf===pinFirst){lsSet('jt2_pin_hash',djb2(pinBuf).toString());document.getElementById('pinInput').value='';unlockApp();}
+    else{err.textContent='PINs do not match. Try again.';pinBuf='';pinFirst='';pinMode='set';document.getElementById('pinMsg').textContent='Set a 6-digit PIN - type on keyboard or tap';const inp=document.getElementById('pinInput');inp.value='';updateDots();setTimeout(()=>inp.focus(),50);}
   }
   else if(pinMode==='enter'){
     const stored=lsGet('jt2_pin_hash');
     if(djb2(pinBuf).toString()===stored){unlockApp();}
-    else{err.textContent='Incorrect PIN. Try again.';pinBuf='';updateDots();}
+    else{err.textContent='Incorrect PIN. Try again.';pinBuf='';const inp=document.getElementById('pinInput');inp.value='';updateDots();setTimeout(()=>inp.focus(),50);}
   }
 }
 function unlockApp(){
   document.getElementById('pinOverlay').style.display='none';
+  document.getElementById('pinInput').value='';
+  pinBuf='';
   startInactTimer();
   document.addEventListener('click',resetInact);
   document.addEventListener('keydown',resetInact);
@@ -841,7 +848,7 @@ function closeModal(id){document.getElementById(id).classList.remove('open');}
 // UTILITIES
 // ═══════════════════════════════════════════════════════
 function uid(){return 'id_'+Date.now()+'_'+Math.random().toString(36).slice(2,7);}
-function fmtDate(d){if(!d)return'—';const dt=new Date(d);return isNaN(dt)?d:dt.toLocaleDateString('en-CA',{month:'short',day:'numeric',year:'numeric'});}
+function fmtDate(d){if(!d)return'-';const dt=new Date(d);return isNaN(dt)?d:dt.toLocaleDateString('en-CA',{month:'short',day:'numeric',year:'numeric'});}
 function isOverdue(d){if(!d)return false;return new Date(d)<new Date(new Date().toDateString());}
 function statusBadge(s){const m={Saved:'saved',Applied:'applied',Screening:'screening',Interview:'interview',Offer:'offer',Rejected:'rejected'};return`<span class="badge badge-${m[s]||'saved'}">${s}</span>`;}
 
@@ -870,10 +877,10 @@ function fillTemplateVars(tmpl,role,company,hrName){
 function seedTemplates(){
   if(templates.length>0)return;
   templates=[
-    {id:uid(),name:'Initial Application',subject:'Application for {{role}} – {{name}} | {{exp}} Automotive Experience',body:`Dear Hiring Team,\n\nI am writing to express my strong interest in the {{role}} position at {{company}}.\n\nWith {{exp}} in the automotive industry, I bring hands-on experience across the full V-model lifecycle — from system requirements and architecture through integration, verification, and validation. My background spans embedded systems, MCAL/HAL driver development, communication protocols (CAN, SPI, UART, I2C), functional safety (ISO 26262, ASPICE), and cross-functional collaboration with OEMs and Tier-1 suppliers.\n\nI have attached my CV for your reference and would welcome the opportunity to discuss how my expertise aligns with your team's goals.\n\nRegards,\n{{name}} | {{phone}} | {{linkedin}}`},
-    {id:uid(),name:'Follow-up (1 Week)',subject:'Follow-up: {{role}} Application – {{name}}',body:`Dear Hiring Team,\n\nI applied for the {{role}} position at {{company}} approximately a week ago and wanted to follow up to confirm receipt and reiterate my strong interest.\n\nMy {{exp}} in automotive embedded systems — spanning MCAL development, AURIX microcontrollers, and functional safety — makes me a strong fit for this role, and I am very keen to contribute to {{company}}'s engineering goals.\n\nPlease let me know if you need any additional information. I look forward to hearing from you.\n\nBest regards,\n{{name}} | {{phone}}`},
-    {id:uid(),name:'Post-Interview Thank You',subject:'Thank You – {{role}} Interview at {{company}}',body:`Dear Hiring Team,\n\nThank you for the opportunity to interview for the {{role}} role at {{company}}.\n\nI enjoyed our discussion about the technical challenges your team is navigating. It reinforced my enthusiasm for joining {{company}}. I believe my background in automotive embedded systems — covering MCAL development, ISO 26262, ASPICE, and HIL validation — aligns closely with what you are looking for.\n\nI remain very interested in this opportunity and look forward to the next steps.\n\nWarm regards,\n{{name}} | {{phone}} | {{linkedin}}`},
-    {id:uid(),name:'Via Referral',subject:'{{role}} Application – Referred by [Referral Name] | {{name}}',body:`Dear Hiring Team,\n\nI was referred to this opportunity by [Referral Name], who felt my profile would be a great match for the {{role}} position at {{company}}.\n\nWith {{exp}} in automotive engineering — including MCAL/ASIC driver development, AURIX TC2xx/TC3xx, SPI/CAN communication, and functional safety (ISO 26262 Level 1 certified) — I am confident in my ability to add value to your team from day one.\n\nPlease find my CV attached. I would be glad to connect at your convenience.\n\nBest regards,\n{{name}} | {{phone}} | {{linkedin}}`}
+    {id:uid(),name:'Initial Application',subject:'Application for {{role}} – {{name}} | {{exp}} Automotive Experience',body:`Dear Hiring Team,\n\nI am writing to express my strong interest in the {{role}} position at {{company}}.\n\nWith {{exp}} in the automotive industry, I bring hands-on experience across the full V-model lifecycle - from system requirements and architecture through integration, verification, and validation. My background spans embedded systems, MCAL/HAL driver development, communication protocols (CAN, SPI, UART, I2C), functional safety (ISO 26262, ASPICE), and cross-functional collaboration with OEMs and Tier-1 suppliers.\n\nI have attached my CV for your reference and would welcome the opportunity to discuss how my expertise aligns with your team's goals.\n\nRegards,\n{{name}} | {{phone}} | {{linkedin}}`},
+    {id:uid(),name:'Follow-up (1 Week)',subject:'Follow-up: {{role}} Application – {{name}}',body:`Dear Hiring Team,\n\nI applied for the {{role}} position at {{company}} approximately a week ago and wanted to follow up to confirm receipt and reiterate my strong interest.\n\nMy {{exp}} in automotive embedded systems - spanning MCAL development, AURIX microcontrollers, and functional safety - makes me a strong fit for this role, and I am very keen to contribute to {{company}}'s engineering goals.\n\nPlease let me know if you need any additional information. I look forward to hearing from you.\n\nBest regards,\n{{name}} | {{phone}}`},
+    {id:uid(),name:'Post-Interview Thank You',subject:'Thank You – {{role}} Interview at {{company}}',body:`Dear Hiring Team,\n\nThank you for the opportunity to interview for the {{role}} role at {{company}}.\n\nI enjoyed our discussion about the technical challenges your team is navigating. It reinforced my enthusiasm for joining {{company}}. I believe my background in automotive embedded systems - covering MCAL development, ISO 26262, ASPICE, and HIL validation - aligns closely with what you are looking for.\n\nI remain very interested in this opportunity and look forward to the next steps.\n\nWarm regards,\n{{name}} | {{phone}} | {{linkedin}}`},
+    {id:uid(),name:'Via Referral',subject:'{{role}} Application – Referred by [Referral Name] | {{name}}',body:`Dear Hiring Team,\n\nI was referred to this opportunity by [Referral Name], who felt my profile would be a great match for the {{role}} position at {{company}}.\n\nWith {{exp}} in automotive engineering - including MCAL/ASIC driver development, AURIX TC2xx/TC3xx, SPI/CAN communication, and functional safety (ISO 26262 Level 1 certified) - I am confident in my ability to add value to your team from day one.\n\nPlease find my CV attached. I would be glad to connect at your convenience.\n\nBest regards,\n{{name}} | {{phone}} | {{linkedin}}`}
   ];
   LS.set('jt2_templates',templates);
 }
@@ -980,9 +987,9 @@ function renderJobs(resetPage=false){
       <td>${start+i+1}</td>
       <td><strong>${j.company}</strong></td>
       <td>${j.role}</td>
-      <td>${j.platform||'—'}</td>
+      <td>${j.platform||'-'}</td>
       <td>${statusBadge(j.status)}</td>
-      <td>${j.location||'—'}</td>
+      <td>${j.location||'-'}</td>
       <td>${fmtDate(j.applied)}</td>
       <td>${fu}</td>
       <td>${pri}</td>
@@ -1031,7 +1038,7 @@ function renderDashboard(){
   const insArr=[];
   if(applied.length>=5){const rr=(jobs.filter(j=>j.status==='Interview').length/applied.length*100).toFixed(0);insArr.push(`Interview rate: <strong>${rr}%</strong>`);}
   const screening=jobs.filter(j=>j.status==='Screening').length;
-  if(screening>0)insArr.push(`<strong>${screening}</strong> application${screening>1?'s':''} in Screening — follow up!`);
+  if(screening>0)insArr.push(`<strong>${screening}</strong> application${screening>1?'s':''} in Screening - follow up!`);
   const highPri=jobs.filter(j=>j.priority==='High'&&j.status==='Applied').length;
   if(highPri>0)insArr.push(`<strong>${highPri}</strong> high-priority role${highPri>1?'s':''} awaiting response`);
   if(!insArr.length)insArr.push('Add more applications to see insights here.');
@@ -1124,16 +1131,16 @@ function renderContacts(){
     const hasEmail=!!(ct.email&&ct.email.trim());
     const es=getContactEmailStatus(ct.email);
     let esBadge='';
-    if(!hasEmail)esBadge='<span title="No email address saved" style="color:var(--text3)">—</span>';
+    if(!hasEmail)esBadge='<span title="No email address saved" style="color:var(--text3)">-</span>';
     else if(es.sent)esBadge=`<span class="badge badge-sent" title="Last sent: ${fmtDate(es.last)}">✉ Sent (${es.count})</span>`;
     else esBadge='<span class="badge badge-unsent">✕ Not Sent</span>';
     return`<tr>
-      <td>${_serialMap.get(ct.id)||'—'}</td>
+      <td>${_serialMap.get(ct.id)||'-'}</td>
       <td><strong>${ct.name}</strong></td>
       <td>${ct.company}</td>
-      <td style="font-size:12px">${ct.email||'—'}</td>
-      <td style="font-size:12px">${ct.phone||'—'}</td>
-      <td style="font-size:12px">${ct.linkedin?`<a href="https://${ct.linkedin.replace('https://','')}" target="_blank" style="color:var(--blue)">🔗</a>`:'—'}</td>
+      <td style="font-size:12px">${ct.email||'-'}</td>
+      <td style="font-size:12px">${ct.phone||'-'}</td>
+      <td style="font-size:12px">${ct.linkedin?`<a href="https://${ct.linkedin.replace('https://','')}" target="_blank" style="color:var(--blue)">🔗</a>`:'-'}</td>
       <td style="font-size:12px">${fmtDate(ct.lastContact)}</td>
       <td>${esBadge}</td>
       <td>
@@ -1471,7 +1478,7 @@ function switchExtTab(t){
 async function callAI(systemPrompt,userContent){
   const key=lsGet('jt2_groq_key');if(!key)throw new Error('No Groq key set');
   const r=await fetch('https://api.groq.com/openai/v1/chat/completions',{method:'POST',headers:{'Authorization':'Bearer '+key,'Content-Type':'application/json'},body:JSON.stringify({model:'llama-3.1-8b-instant',max_tokens:2000,messages:[{role:'system',content:systemPrompt},{role:'user',content:userContent}]})});
-  if(!r.ok){const e=await r.json();if(r.status===401)throw new Error('Invalid Groq API key');if(r.status===429)throw new Error('Rate limit reached — try again shortly');throw new Error(e.error?.message||'AI error');}
+  if(!r.ok){const e=await r.json();if(r.status===401)throw new Error('Invalid Groq API key');if(r.status===429)throw new Error('Rate limit reached - try again shortly');throw new Error(e.error?.message||'AI error');}
   const d=await r.json();return d.choices[0].message.content;
 }
 
@@ -1899,18 +1906,18 @@ async function deleteBlock(idx){
 // MOTIVATION
 // ═══════════════════════════════════════════════════════
 const QUOTES=[
-  {q:"Every expert was once a beginner. Your MCAL experience on the bench is your foundation.",a:"— Keep Building"},
-  {q:"AURIX today, next-gen SoC tomorrow — stay ahead of the silicon curve.",a:"— Automotive Wisdom"},
-  {q:"ISO 26262 demands functional safety — your career deserves the same rigour.",a:"— Engineer's Creed"},
-  {q:"Quality is never an accident; it is always the result of intelligent effort.",a:"— John Ruskin"},
-  {q:"Every CAN frame sent brings you closer to the job that fits your drive.",a:"— Job Hunt Truth"},
-  {q:"Your ASPICE and embedded expertise is rare in Canada — make sure every HR knows it.",a:"— Stand Out"},
-  {q:"The V in V-model stands for validation — validate yourself in every interview.",a:"— V-Model Wisdom"},
-  {q:"Persistence is the engine; your 8 years of embedded skills are the fuel.",a:"— Career Drive"},
-  {q:"A great engineer doesn't just solve problems — they anticipate them.",a:"— Engineering Mindset"},
-  {q:"The best time to update your CV was yesterday. The second best time is now.",a:"— Job Hunt Reality"},
-  {q:"Every rejection is a debug cycle — find the root cause, patch it, retest.",a:"— Embedded Life"},
-  {q:"From Bangalore to Ottawa — your journey is proof that great engineers find great opportunities.",a:"— Keep Going"}
+  {q:"Every expert was once a beginner. Your MCAL experience on the bench is your foundation.",a:"- Keep Building"},
+  {q:"AURIX today, next-gen SoC tomorrow - stay ahead of the silicon curve.",a:"- Automotive Wisdom"},
+  {q:"ISO 26262 demands functional safety - your career deserves the same rigour.",a:"- Engineer's Creed"},
+  {q:"Quality is never an accident; it is always the result of intelligent effort.",a:"- John Ruskin"},
+  {q:"Every CAN frame sent brings you closer to the job that fits your drive.",a:"- Job Hunt Truth"},
+  {q:"Your ASPICE and embedded expertise is rare in Canada - make sure every HR knows it.",a:"- Stand Out"},
+  {q:"The V in V-model stands for validation - validate yourself in every interview.",a:"- V-Model Wisdom"},
+  {q:"Persistence is the engine; your 8 years of embedded skills are the fuel.",a:"- Career Drive"},
+  {q:"A great engineer doesn't just solve problems - they anticipate them.",a:"- Engineering Mindset"},
+  {q:"The best time to update your CV was yesterday. The second best time is now.",a:"- Job Hunt Reality"},
+  {q:"Every rejection is a debug cycle - find the root cause, patch it, retest.",a:"- Embedded Life"},
+  {q:"From Bangalore to Ottawa - your journey is proof that great engineers find great opportunities.",a:"- Keep Going"}
 ];
 
 function renderMotivation(){
@@ -1956,7 +1963,7 @@ function renderGoals(){
 }
 
 // ═══════════════════════════════════════════════════════
-// SETTINGS — FIREBASE
+// SETTINGS - FIREBASE
 // ═══════════════════════════════════════════════════════
 function loadSettings(){
   document.getElementById('domainDisp').textContent=window.location.hostname;
@@ -2007,7 +2014,7 @@ function loadFBCfg(){
       if(cfg.messagingSenderId)document.getElementById('fbMsgSenderId').value=cfg.messagingSenderId;
       if(cfg.appId)document.getElementById('fbAppId').value=cfg.appId;
       LS.set('jt2_fb_cfg',cfg);
-      toast('Config loaded — click Connect Firebase','success');
+      toast('Config loaded - click Connect Firebase','success');
     }catch(err){toast('Invalid JSON file','error');}
   };
   r.readAsText(file);
@@ -2036,8 +2043,8 @@ async function connectFB(){
     // Test write
     const res=await fbOp(FB.db.collection('_test').doc('ping').set({t:Date.now()}),6000);
     if(!res.ok){
-      if(res.code==='timeout'){toast('Timeout — add '+window.location.hostname+' to Firebase Authorized Domains','error');document.getElementById('fbDomWarn').style.display='';}
-      else if(res.code==='permission-denied'){toast('Permission denied — fix Firestore Security Rules','error');}
+      if(res.code==='timeout'){toast('Timeout - add '+window.location.hostname+' to Firebase Authorized Domains','error');document.getElementById('fbDomWarn').style.display='';}
+      else if(res.code==='permission-denied'){toast('Permission denied - fix Firestore Security Rules','error');}
       else toast('Firebase error: '+res.msg,'error');
       return;
     }
@@ -2103,7 +2110,7 @@ function copyDomain(){navigator.clipboard.writeText(window.location.hostname);to
 function copyRules(){navigator.clipboard.writeText("rules_version = '2';\nservice cloud.firestore {\n  match /databases/{database}/documents {\n    match /{document=**} {\n      allow read, write: if true;\n    }\n  }\n}");toast('Rules copied','success');}
 
 // ═══════════════════════════════════════════════════════
-// SETTINGS — GMAIL (Google Identity Services)
+// SETTINGS - GMAIL (Google Identity Services)
 // ═══════════════════════════════════════════════════════
 let _gisClient=null;
 
@@ -2116,7 +2123,7 @@ function gmailStatus(msg,color){
 function connectGmail(){
   const clientId=document.getElementById('gmailClientId').value.trim();
   if(!clientId){toast('Enter Gmail Client ID first','error');gmailStatus('❌ No Client ID entered. Paste your OAuth Client ID above.','var(--red)');return;}
-  if(!clientId.includes('.apps.googleusercontent.com')){gmailStatus('⚠️ Client ID looks wrong — it should end with .apps.googleusercontent.com','var(--orange)');}
+  if(!clientId.includes('.apps.googleusercontent.com')){gmailStatus('⚠️ Client ID looks wrong - it should end with .apps.googleusercontent.com','var(--orange)');}
   lsSet('jt2_gmail_client_id',clientId);
   gmailStatus('⏳ Step 1/3: Loading Google sign-in library…','var(--gold)');
   const doAuth=()=>{
@@ -2131,8 +2138,8 @@ function connectGmail(){
         callback:(resp)=>{
           if(resp.error){
             const hints={
-              'popup_closed_by_user':'You closed the popup — click Connect Gmail and complete sign-in.',
-              'access_denied':'You denied access — click Allow when Google asks for gmail.send permission.',
+              'popup_closed_by_user':'You closed the popup - click Connect Gmail and complete sign-in.',
+              'access_denied':'You denied access - click Allow when Google asks for gmail.send permission.',
               'invalid_client':'Client ID is wrong or OAuth not set up in Google Cloud.',
               'unauthorized_client':'This domain is not in Authorized JavaScript Origins in Google Cloud.',
               'redirect_uri_mismatch':'Add https://devanshparikh.github.io to Authorized JS Origins in Google Cloud Credentials.'
@@ -2149,7 +2156,7 @@ function connectGmail(){
           toast('Gmail connected!','success');
         },
         error_callback:(err)=>{
-          const msg=err.type==='popup_failed_to_open'?'Popup was blocked — allow popups for this site in your browser address bar.':err.type==='popup_closed'?'Popup closed before sign-in completed.':('Error: '+err.type);
+          const msg=err.type==='popup_failed_to_open'?'Popup was blocked - allow popups for this site in your browser address bar.':err.type==='popup_closed'?'Popup closed before sign-in completed.':('Error: '+err.type);
           gmailStatus('❌ '+msg,'var(--red)');
           toast('Gmail error: '+err.type,'error');
         }
@@ -2157,7 +2164,7 @@ function connectGmail(){
       gmailStatus('⏳ Step 3/3: Opening Google sign-in popup… (allow popups if blocked)','var(--gold)');
       _gisClient.requestAccessToken({prompt:'consent'});
     }catch(e){
-      gmailStatus('❌ Init error: '+e.message+' — Try refreshing the page or a different browser.','var(--red)');
+      gmailStatus('❌ Init error: '+e.message+' - Try refreshing the page or a different browser.','var(--red)');
       toast('Gmail init failed: '+e.message,'error');
     }
   };
@@ -2180,7 +2187,7 @@ function disconnectGmail(){
 }
 
 // ═══════════════════════════════════════════════════════
-// SETTINGS — GROQ & GEMINI
+// SETTINGS - GROQ & GEMINI
 // ═══════════════════════════════════════════════════════
 async function saveGroq(){
   const key=document.getElementById('groqKey').value.trim();if(!key){toast('Enter key','error');return;}
@@ -2196,7 +2203,7 @@ async function saveGroq(){
 function saveGemini(){const key=document.getElementById('geminiKey').value.trim();if(!key)return;lsSet('jt2_gemini_key',key);toast('Gemini key saved','success');}
 
 // ═══════════════════════════════════════════════════════
-// SETTINGS — PROFILE
+// SETTINGS - PROFILE
 // ═══════════════════════════════════════════════════════
 function saveProfile(){
   profile={
@@ -2291,11 +2298,35 @@ async function fetchAllJobs(){
     }
   }
   loadDiv.style.display='none';
+  // Title-level hard filter first
+  _jbAllJobs=_jbAllJobs.filter(j=>isTitleRelevant(j.title));
+  // Groq AI relevance scoring
+  const groqKey=lsGet('jt2_groq_key');
+  if(groqKey&&_jbAllJobs.length>0){
+    document.getElementById('jbLoadingMsg').textContent='🤖 AI filtering for relevance…';
+    document.getElementById('jbLoadingDetail').textContent='Scoring '+_jbAllJobs.length+' jobs against your profile…';
+    loadDiv.style.display='';
+    try{
+      const batch=_jbAllJobs.slice(0,60);// score top 60
+      const jobList=batch.map((j,i)=>`${i}. ${j.title} at ${j.company} (${j.location}) - ${j.description.slice(0,120)}`).join('\n');
+      const sys='You are a job relevance filter for an automotive embedded engineer. Profile: 8+ years, MCAL/AUTOSAR/AURIX TC2xx TC3xx, ISO 26262 Level 1, ASPICE, CAN/SPI/UART, HIL testing, embedded C, Ottawa Canada, work permit. Return ONLY a JSON array of indices (0-based) of jobs that are genuinely relevant to this profile. Exclude: accounting, marketing, sales, HR, web dev, mobile dev, data science, cloud, unrelated software roles. Include: embedded software, firmware, automotive software, MCAL, ECU, RTOS, functional safety, automotive systems, hardware-related engineering.';
+      const resp=await callAI(sys,'Which of these jobs (by index number) are relevant?\\n'+jobList+'\\n\\nReturn ONLY a JSON array like [0,2,5,8]');
+      const clean=resp.replace(/```json\n?|```/g,'').trim();
+      const indices=JSON.parse(clean);
+      if(Array.isArray(indices)&&indices.length>0){
+        const aiFiltered=indices.filter(i=>i>=0&&i<batch.length).map(i=>({...batch[i],aiScore:true}));
+        const rest=_jbAllJobs.slice(60);// keep unscored ones too
+        _jbAllJobs=[...aiFiltered,...rest];
+        document.getElementById('jbLoadingDetail').textContent='🤖 AI kept '+aiFiltered.length+' relevant jobs from top 60';
+      }
+    }catch(e){document.getElementById('jbLoadingDetail').textContent='AI scoring skipped: '+e.message;}
+    loadDiv.style.display='none';
+  }
   lsSet('jt2_jb_lastfetch',new Date().toISOString());
-  lsSet('jt2_jb_jobs',_jbAllJobs.slice(0,300));// cap storage
+  lsSet('jt2_jb_jobs',_jbAllJobs.slice(0,300));
   document.getElementById('jbLastFetch').textContent='Last fetched: '+new Date().toLocaleString();
   filterJBResults();
-  toast('Found '+_jbAllJobs.length+' jobs','success');
+  toast('Found '+_jbAllJobs.length+' relevant jobs','success');
 }
 
 // ── ARBEITNOW (free, no key, CORS ok) ──
@@ -2401,9 +2432,21 @@ async function fetchIndeedCA(){
   return all;
 }
 
-function isRelevantJob(text){
-  const t=text.toLowerCase();
-  return JB_KEYWORDS.some(kw=>t.includes(kw));
+// Strict title-first filter - title MUST match, not just description
+function isRelevantJob(text, titleOnly=false){
+  const full=text.toLowerCase();
+  // Must match at least one CORE embedded/automotive keyword
+  const coreKw=['embedded','firmware','mcal','autosar','microcontroller','automotive','can bus','iso 26262','ecu','aurix','rtos','arm cortex','stm32','fpga','powertrain','adas','functional safety','aspice','drivetrain','electric vehicle','motor control','vehicle software','plc','vhdl'];
+  return coreKw.some(kw=>full.includes(kw));
+}
+
+// Strict title check - rejects "Accountant", "Marketing", "HR", etc.
+const REJECT_TITLES=['account','finance','market','sales','recruit','hr manager','talent acquisition','business develop','legal','graphic','design','product manager','scrum master','data analyst','data scientist','machine learning','devops','cloud','web develop','frontend','backend','fullstack','android','ios','mobile develop','java devel','python devel','ruby','php','wordpress'];
+function isTitleRelevant(title){
+  const t=title.toLowerCase();
+  if(REJECT_TITLES.some(r=>t.includes(r)))return false;
+  const coreKw=['embedded','firmware','mcal','autosar','microcontroller','automotive','ecu','aurix','rtos','fpga','powertrain','adas','functional safety','aspice','motor control','can ','spi ','uart','vhdl','plc','scada','hardware engineer','electronics engineer','software engineer','systems engineer','control system'];
+  return coreKw.some(kw=>t.includes(kw));
 }
 
 function isCanadaOrRemote(job){
@@ -2481,7 +2524,7 @@ function openApplyModal(idx){
   const phone=profile.phone||'+1(343)558-4654';
   const linkedin=profile.linkedin||'linkedin.com/in/parikhdevansh4295/';
   document.getElementById('applySubject').value=`Application for ${j.title} – ${name} | ${exp} Automotive Experience`;
-  document.getElementById('applyBody').value=`Dear Hiring Team,\n\nI am writing to express my strong interest in the ${j.title} position at ${j.company}.\n\nWith ${exp} in the automotive industry, I bring hands-on expertise across the full V-model lifecycle — MCAL/HAL driver development, AURIX TC2xx/TC3xx microcontrollers, communication protocols (CAN, SPI, UART, I2C), functional safety (ISO 26262 Level 1 certified), and ASPICE compliance. My background includes embedded C development, HIL test bench setup, and cross-functional collaboration with OEMs and Tier-1 suppliers.\n\nI am based in Ottawa, Canada and hold a valid Work Permit with PR in process — available to join immediately.\n\nI have attached my CV for your reference and would welcome the opportunity to discuss how my expertise aligns with your team's goals.\n\nRegards,\n${name}\n${phone} | ${linkedin}`;
+  document.getElementById('applyBody').value=`Dear Hiring Team,\n\nI am writing to express my strong interest in the ${j.title} position at ${j.company}.\n\nWith ${exp} in the automotive industry, I bring hands-on expertise across the full V-model lifecycle - MCAL/HAL driver development, AURIX TC2xx/TC3xx microcontrollers, communication protocols (CAN, SPI, UART, I2C), functional safety (ISO 26262 Level 1 certified), and ASPICE compliance. My background includes embedded C development, HIL test bench setup, and cross-functional collaboration with OEMs and Tier-1 suppliers.\n\nI am based in Ottawa, Canada and hold a valid Work Permit with PR in process - available to join immediately.\n\nI have attached my CV for your reference and would welcome the opportunity to discuss how my expertise aligns with your team's goals.\n\nRegards,\n${name}\n${phone} | ${linkedin}`;
   // CV selector
   const sel=document.getElementById('applyCVSel');
   sel.innerHTML=cvVersions.length?cvVersions.map(v=>`<option value="${v.id}" ${v.isDefault?'selected':''}>${v.label||v.name}</option>`).join(''):'<option value="">No CV uploaded</option>';
@@ -2511,8 +2554,8 @@ async function confirmAndApply(){
     return;
   }
   if(!to){
-    // No email — open job page
-    if(!confirm('No HR email entered — will open the job page so you can apply there. Continue?'))return;
+    // No email - open job page
+    if(!confirm('No HR email entered - will open the job page so you can apply there. Continue?'))return;
     window.open(j.url,'_blank');
     logJBApplication(j,'(via job page)');
     closeModal('mApply');
@@ -2520,7 +2563,7 @@ async function confirmAndApply(){
     return;
   }
   // Send via Gmail
-  if(!_gmailToken){toast('Gmail not connected — go to Settings','error');return;}
+  if(!_gmailToken){toast('Gmail not connected - go to Settings','error');return;}
   try{
     await sendViaGmail(to,subject,body,cv);
     logJBApplication(j,to);

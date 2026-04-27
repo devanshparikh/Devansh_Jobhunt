@@ -2330,123 +2330,150 @@ async function fetchAllJobs(){
 }
 
 // ── ARBEITNOW (free, no key, CORS ok) ──
+// ── ARBEITNOW — search by specific embedded/automotive tags only ──
 async function fetchArbeitnow(){
-  const pages=[1,2,3];let all=[];
-  for(const page of pages){
-    const r=await fetch(`https://www.arbeitnow.com/api/job-board-api?page=${page}`);
-    if(!r.ok)break;
-    const d=await r.json();
-    const jobs=(d.data||[]).filter(j=>isRelevantJob(j.title+' '+(j.description||''))).map(j=>({
-      id:'an_'+j.slug,title:j.title,company:j.company_name,location:j.location||'Remote',
-      type:j.job_types?j.job_types.join(', '):'',url:j.url,description:(j.description||'').slice(0,400),
-      source:'Arbeitnow',posted:j.created_at?new Date(j.created_at*1000).toISOString().slice(0,10):'',
-      remote:j.remote||false,tags:(j.tags||[]).join(', ')
-    }));
-    all.push(...jobs);
-    if(!d.data||d.data.length<25)break;
+  const tags=['embedded-systems','firmware','automotive','microcontroller','rtos','fpga','embedded-software'];
+  let all=[];const seen=new Set();
+  for(const tag of tags){
+    try{
+      const r=await fetch('https://www.arbeitnow.com/api/job-board-api?tag='+encodeURIComponent(tag));
+      if(!r.ok)continue;
+      const d=await r.json();
+      (d.data||[]).forEach(j=>{
+        if(seen.has(j.slug))return;
+        if(!isTitleRelevant(j.title))return;
+        seen.add(j.slug);
+        all.push({
+          id:'an_'+j.slug,title:j.title,company:j.company_name,location:j.location||'Remote',
+          type:j.job_types?j.job_types.join(', '):'',url:j.url,
+          description:(j.description||'').replace(/<[^>]*>/g,'').slice(0,400),
+          source:'Arbeitnow',posted:j.created_at?new Date(j.created_at*1000).toISOString().slice(0,10):'',
+          remote:!!(j.remote||(j.location||'').toLowerCase().includes('remote')),
+          tags:(j.tags||[]).join(', ')
+        });
+      });
+    }catch(e){}
+    await new Promise(r=>setTimeout(r,250));
   }
   return all;
 }
 
-// ── REMOTIVE (free, remote jobs) ──
+// ── REMOTIVE — remote embedded/firmware/automotive jobs ──
 async function fetchRemotive(){
-  const queries=['embedded','firmware','automotive','microcontroller'];
+  const queries=['embedded','firmware','automotive','microcontroller','RTOS','FPGA'];
   let all=[];const seen=new Set();
   for(const q of queries){
     try{
-      const r=await fetch(`https://remotive.com/api/remote-jobs?search=${encodeURIComponent(q)}&limit=50`);
+      const r=await fetch('https://remotive.com/api/remote-jobs?search='+encodeURIComponent(q)+'&limit=50');
       if(!r.ok)continue;
       const d=await r.json();
-      const jobs=(d.jobs||[]).filter(j=>!seen.has(j.id)&&isRelevantJob(j.title+' '+(j.description||''))).map(j=>{seen.add(j.id);return{
-        id:'rm_'+j.id,title:j.title,company:j.company_name,location:'Remote',
-        type:j.job_type||'Remote',url:j.url,description:(j.description||'').replace(/<[^>]*>/g,'').slice(0,400),
-        source:'Remotive',posted:j.publication_date?j.publication_date.slice(0,10):'',
-        remote:true,tags:(j.tags||[]).join(', ')
-      };});
-      all.push(...jobs);
+      (d.jobs||[]).forEach(j=>{
+        if(seen.has(j.id))return;
+        if(!isTitleRelevant(j.title))return;
+        seen.add(j.id);
+        all.push({
+          id:'rm_'+j.id,title:j.title,company:j.company_name,location:'Remote',
+          type:j.job_type||'Remote',url:j.url,
+          description:(j.description||'').replace(/<[^>]*>/g,'').slice(0,400),
+          source:'Remotive',posted:j.publication_date?j.publication_date.slice(0,10):'',
+          remote:true,tags:(j.tags||[]).join(', ')
+        });
+      });
+    }catch(e){}
+    await new Promise(r=>setTimeout(r,300));
+  }
+  return all;
+}
+
+// ── JOBICY — engineering remote jobs with tag search ──
+async function fetchJobicy(){
+  const tags=['embedded','firmware','automotive','microcontroller'];
+  let all=[];const seen=new Set();
+  for(const tag of tags){
+    try{
+      const r=await fetch('https://jobicy.com/api/v2/remote-jobs?count=25&industry=engineering&tag='+encodeURIComponent(tag));
+      if(!r.ok)continue;
+      const d=await r.json();
+      (d.jobs||[]).forEach(j=>{
+        if(seen.has(j.id))return;
+        if(!isTitleRelevant(j.jobTitle||''))return;
+        seen.add(j.id);
+        all.push({
+          id:'jy_'+j.id,title:j.jobTitle,company:j.companyName,location:j.jobGeo||'Remote',
+          type:j.jobType||'Remote',url:j.url,
+          description:(j.jobDescription||'').replace(/<[^>]*>/g,'').slice(0,400),
+          source:'Jobicy',posted:j.pubDate?j.pubDate.slice(0,10):'',remote:true,tags:''
+        });
+      });
     }catch(e){}
   }
   return all;
 }
 
-// ── JOBICY (free, remote + global) ──
-async function fetchJobicy(){
-  try{
-    const r=await fetch('https://jobicy.com/api/v2/remote-jobs?count=50&industry=engineering&tag=embedded');
-    if(!r.ok)throw new Error('HTTP '+r.status);
-    const d=await r.json();
-    return(d.jobs||[]).filter(j=>isRelevantJob(j.jobTitle+' '+(j.jobDescription||'')+(j.jobIndustry||''))).map(j=>({
-      id:'jy_'+j.id,title:j.jobTitle,company:j.companyName,location:j.jobGeo||'Remote',
-      type:j.jobType||'Remote',url:j.url,description:(j.jobDescription||'').replace(/<[^>]*>/g,'').slice(0,400),
-      source:'Jobicy',posted:j.pubDate?j.pubDate.slice(0,10):'',remote:true,tags:''
-    }));
-  }catch(e){
-    // fallback broader search
-    const r2=await fetch('https://jobicy.com/api/v2/remote-jobs?count=50&industry=engineering');
-    if(!r2.ok)throw new Error('Jobicy unavailable');
-    const d2=await r2.json();
-    return(d2.jobs||[]).filter(j=>isRelevantJob(j.jobTitle+' '+(j.jobDescription||''))).map(j=>({
-      id:'jy_'+j.id,title:j.jobTitle,company:j.companyName,location:j.jobGeo||'Remote',
-      type:j.jobType||'Remote',url:j.url,description:(j.jobDescription||'').replace(/<[^>]*>/g,'').slice(0,400),
-      source:'Jobicy',posted:j.pubDate?j.pubDate.slice(0,10):'',remote:true,tags:''
-    }));
-  }
-}
-
-// ── INDEED CA via RSS proxy (CORS-safe) ──
+// ── INDEED CA — targeted role searches via RSS proxy ──
 async function fetchIndeedCA(){
   const searches=[
-    'embedded+software+engineer+canada',
-    'firmware+engineer+canada',
-    'automotive+embedded+canada',
-    'MCAL+developer+canada',
-    'embedded+systems+remote+canada'
+    {q:'embedded+software+engineer',l:'Canada'},
+    {q:'firmware+engineer',l:'Canada'},
+    {q:'automotive+embedded+software',l:'Canada'},
+    {q:'MCAL+AUTOSAR+developer',l:''},
+    {q:'embedded+systems+engineer',l:'Canada'},
+    {q:'ECU+software+engineer',l:'Canada'},
+    {q:'functional+safety+engineer+automotive',l:'Canada'},
+    {q:'embedded+C+RTOS+engineer',l:''},
   ];
   let all=[];const seen=new Set();
-  const proxy='https://api.rss2json.com/v1/api.json?rss_url=';
-  for(const q of searches){
-    try{
-      const rssUrl=encodeURIComponent(`https://ca.indeed.com/rss?q=${q}&l=Canada&sort=date&limit=25`);
-      const r=await fetch(proxy+rssUrl);
-      if(!r.ok)continue;
-      const d=await r.json();
-      const items=d.items||[];
-      const jobs=items.filter(item=>!seen.has(item.link)&&isRelevantJob(item.title+' '+(item.description||''))).map(item=>{
-        seen.add(item.link);
-        const desc=(item.description||'').replace(/<[^>]*>/g,'').slice(0,400);
-        // Parse company from title (Indeed format: "Job Title - Company")
-        const parts=item.title.split(' - ');
-        const title=parts[0]||item.title;
-        const company=parts[1]||'See listing';
-        return{
-          id:'in_'+btoa(item.link).slice(0,12),title,company,
-          location:parts[2]||'Canada',type:'Full-time',url:item.link,
-          description:desc,source:'Indeed CA',
-          posted:item.pubDate?item.pubDate.slice(0,10):'',remote:item.title.toLowerCase().includes('remote'),tags:''
-        };
-      });
-      all.push(...jobs);
-    }catch(e){}
-    await new Promise(r=>setTimeout(r,300));// rate limit
+  const proxies=[
+    (u)=>'https://api.rss2json.com/v1/api.json?rss_url='+encodeURIComponent(u),
+    (u)=>'https://rss2json.com/api.json?rss_url='+encodeURIComponent(u),
+  ];
+  for(const {q,l} of searches){
+    const indeedUrl='https://ca.indeed.com/rss?q='+q+(l?'&l='+l:'')+'&sort=date&limit=20';
+    let fetched=false;
+    for(const mkProxy of proxies){
+      if(fetched)break;
+      try{
+        const r=await fetch(mkProxy(indeedUrl));
+        if(!r.ok)continue;
+        const d=await r.json();
+        const items=d.items||[];
+        if(!items.length)continue;
+        fetched=true;
+        items.forEach(item=>{
+          if(seen.has(item.link))return;
+          const parts=(item.title||'').split(' - ');
+          const title=(parts[0]||item.title).trim();
+          if(!isTitleRelevant(title))return;
+          seen.add(item.link);
+          const company=(parts[1]||'See listing').trim();
+          const location=(parts[2]||l||'Canada').trim();
+          const desc=(item.description||'').replace(/<[^>]*>/g,'').replace(/\s+/g,' ').slice(0,400);
+          all.push({
+            id:'in_'+Math.abs((item.link||'').split('').reduce((a,c)=>((a<<5)-a)+c.charCodeAt(0),0)).toString(36).slice(0,10),
+            title,company,location,type:'Full-time',url:item.link,description:desc,
+            source:'Indeed CA',posted:item.pubDate?item.pubDate.slice(0,10):'',
+            remote:title.toLowerCase().includes('remote')||location.toLowerCase().includes('remote'),tags:''
+          });
+        });
+      }catch(e){}
+    }
+    await new Promise(r=>setTimeout(r,500));
   }
   return all;
 }
 
-// Strict title-first filter - title MUST match, not just description
-function isRelevantJob(text, titleOnly=false){
-  const full=text.toLowerCase();
-  // Must match at least one CORE embedded/automotive keyword
-  const coreKw=['embedded','firmware','mcal','autosar','microcontroller','automotive','can bus','iso 26262','ecu','aurix','rtos','arm cortex','stm32','fpga','powertrain','adas','functional safety','aspice','drivetrain','electric vehicle','motor control','vehicle software','plc','vhdl'];
-  return coreKw.some(kw=>full.includes(kw));
-}
-
-// Strict title check - rejects "Accountant", "Marketing", "HR", etc.
-const REJECT_TITLES=['account','finance','market','sales','recruit','hr manager','talent acquisition','business develop','legal','graphic','design','product manager','scrum master','data analyst','data scientist','machine learning','devops','cloud','web develop','frontend','backend','fullstack','android','ios','mobile develop','java devel','python devel','ruby','php','wordpress'];
+// Title MUST contain a relevant technical keyword AND must not match reject list
+const REJECT_WORDS=['accountant','accounting',' controller','finance manager','marketing','influencer','sales manager','sales rep','recruiter','recruitment','talent acquisition','business development','business analyst','legal','graphic design','product manager','scrum master','data analyst','data scientist','machine learning','devops','cloud engineer','cloud architect','web develop','frontend','backend','fullstack','react developer','angular','android developer','ios developer','mobile develop','java developer','python developer','ruby','php developer','wordpress','seo','copywriter','content writer','social media','hr manager','human resource','office manager','project coordinator','werkstudent','praktikum'];
 function isTitleRelevant(title){
   const t=title.toLowerCase();
-  if(REJECT_TITLES.some(r=>t.includes(r)))return false;
-  const coreKw=['embedded','firmware','mcal','autosar','microcontroller','automotive','ecu','aurix','rtos','fpga','powertrain','adas','functional safety','aspice','motor control','can ','spi ','uart','vhdl','plc','scada','hardware engineer','electronics engineer','software engineer','systems engineer','control system'];
-  return coreKw.some(kw=>t.includes(kw));
+  if(REJECT_WORDS.some(r=>t.includes(r)))return false;
+  const mustHave=['embedded','firmware','mcal','autosar','microcontroller','automotive software','ecu','aurix','rtos','fpga','powertrain','adas','functional safety','aspice','motor control','vhdl','hardware engineer','electronics engineer','embedded systems','embedded software','vehicle software','iso 26262','automotive engineer','can protocol'];
+  return mustHave.some(kw=>t.includes(kw));
+}
+
+// Keep for backward compat
+function isRelevantJob(text){
+  return isTitleRelevant(text.split(' ').slice(0,8).join(' '));
 }
 
 function isCanadaOrRemote(job){

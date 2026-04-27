@@ -2341,7 +2341,7 @@ async function fetchArbeitnow(){
       const d=await r.json();
       (d.data||[]).forEach(j=>{
         if(seen.has(j.slug))return;
-        if(!isTitleRelevant(j.title))return;
+        if(!isTitleRelevant(j.title,(j.description||'')))return;
         seen.add(j.slug);
         all.push({
           id:'an_'+j.slug,title:j.title,company:j.company_name,location:j.location||'Remote',
@@ -2369,7 +2369,7 @@ async function fetchRemotive(){
       const d=await r.json();
       (d.jobs||[]).forEach(j=>{
         if(seen.has(j.id))return;
-        if(!isTitleRelevant(j.title))return;
+        if(!isTitleRelevant(j.title,(j.description||'')))return;
         seen.add(j.id);
         all.push({
           id:'rm_'+j.id,title:j.title,company:j.company_name,location:'Remote',
@@ -2396,7 +2396,7 @@ async function fetchJobicy(){
       const d=await r.json();
       (d.jobs||[]).forEach(j=>{
         if(seen.has(j.id))return;
-        if(!isTitleRelevant(j.jobTitle||''))return;
+        if(!isTitleRelevant(j.jobTitle||'',(j.jobDescription||'')))return;
         seen.add(j.id);
         all.push({
           id:'jy_'+j.id,title:j.jobTitle,company:j.companyName,location:j.jobGeo||'Remote',
@@ -2443,7 +2443,7 @@ async function fetchIndeedCA(){
           if(seen.has(item.link))return;
           const parts=(item.title||'').split(' - ');
           const title=(parts[0]||item.title).trim();
-          if(!isTitleRelevant(title))return;
+          if(!isTitleRelevant(title,desc))return;
           seen.add(item.link);
           const company=(parts[1]||'See listing').trim();
           const location=(parts[2]||l||'Canada').trim();
@@ -2462,18 +2462,31 @@ async function fetchIndeedCA(){
   return all;
 }
 
-// Title MUST contain a relevant technical keyword AND must not match reject list
-const REJECT_WORDS=['accountant','accounting',' controller','finance manager','marketing','influencer','sales manager','sales rep','recruiter','recruitment','talent acquisition','business development','business analyst','legal','graphic design','product manager','scrum master','data analyst','data scientist','machine learning','devops','cloud engineer','cloud architect','web develop','frontend','backend','fullstack','react developer','angular','android developer','ios developer','mobile develop','java developer','python developer','ruby','php developer','wordpress','seo','copywriter','content writer','social media','hr manager','human resource','office manager','project coordinator','werkstudent','praktikum'];
-function isTitleRelevant(title){
+// Hard reject list — these roles are never relevant
+const REJECT_WORDS=['accountant','accounting',' controller','finance manager','marketing manager','influencer','sales manager','sales rep','recruiter','recruitment consultant','talent acquisition','business development','business analyst','legal counsel','graphic design','product manager','scrum master','data analyst','data scientist','machine learning engineer','devops engineer','cloud engineer','cloud architect','web developer','frontend developer','backend developer','fullstack developer','react developer','angular developer','android developer','ios developer','mobile developer','java developer','python developer','ruby developer','php developer','wordpress','seo specialist','copywriter','content writer','social media','hr manager','human resource','office manager','project coordinator','werkstudent','praktikant'];
+
+// Title check — title OR description must contain embedded/automotive keywords
+// Title must not be a hard-reject role
+function isTitleRelevant(title, description){
   const t=title.toLowerCase();
+  const d=(description||'').toLowerCase();
+  // Hard reject on title
   if(REJECT_WORDS.some(r=>t.includes(r)))return false;
-  const mustHave=['embedded','firmware','mcal','autosar','microcontroller','automotive software','ecu','aurix','rtos','fpga','powertrain','adas','functional safety','aspice','motor control','vhdl','hardware engineer','electronics engineer','embedded systems','embedded software','vehicle software','iso 26262','automotive engineer','can protocol'];
-  return mustHave.some(kw=>t.includes(kw));
+  // Core technical keywords — check title first, then description
+  const coreKw=['embedded','firmware','mcal','autosar','microcontroller','automotive software','ecu','aurix','rtos','fpga','powertrain','adas','functional safety','aspice','motor control','vhdl','hardware engineer','electronics engineer','embedded systems','embedded software','vehicle software','iso 26262','automotive engineer','can bus','can protocol','electric vehicle','ev software','drivetrain','inverter software','bms','battery management'];
+  if(coreKw.some(kw=>t.includes(kw)))return true;
+  // If title is generic "software engineer" etc, check description
+  const genericTech=['software engineer','software developer','systems engineer','controls engineer','electrical engineer','electronics engineer','hardware engineer'];
+  if(genericTech.some(kw=>t.includes(kw))){
+    return coreKw.some(kw=>d.includes(kw));
+  }
+  return false;
 }
 
 // Keep for backward compat
 function isRelevantJob(text){
-  return isTitleRelevant(text.split(' ').slice(0,8).join(' '));
+  const words=text.split(' ');
+  return isTitleRelevant(words.slice(0,6).join(' '), words.slice(6).join(' '));
 }
 
 function isCanadaOrRemote(job){
@@ -2490,9 +2503,10 @@ function filterJBResults(){
   const locF=document.getElementById('jbLocation').value;
   _jbFiltered=_jbAllJobs.filter(j=>{
     if(src&&j.source!==src)return false;
-    if(locF==='canada'&&j.remote)return false;
-    if(locF==='remote'&&!j.remote)return false;
-    if(!isCanadaOrRemote(j))return false;
+    // Location filter only when explicitly chosen
+    if(locF==='canada'){if(!isCanadaOrRemote(j)||j.remote)return false;}
+    else if(locF==='remote'){if(!j.remote)return false;}
+    else if(locF===''){/* show all — no location filter */}
     if(kw){const hay=(j.title+' '+j.company+' '+j.description+' '+j.tags).toLowerCase();if(!hay.includes(kw))return false;}
     return true;
   });

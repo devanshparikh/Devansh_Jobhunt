@@ -752,6 +752,14 @@ function initPin(){
   if(!stored){pinMode='set';document.getElementById('pinMsg').textContent='Set a 6-digit PIN to protect your data';}
   else{pinMode='enter';document.getElementById('pinMsg').textContent='Enter your 6-digit PIN to unlock';}
   updateDots();
+  document.addEventListener('keydown',function pinKbHandler(e){
+    const overlay=document.getElementById('pinOverlay');
+    if(!overlay||overlay.style.display==='none'){document.removeEventListener('keydown',pinKbHandler);return;}
+    if(e.key>='0'&&e.key<='9'){e.preventDefault();pinKey(e.key);}
+    else if(e.key==='Backspace'){e.preventDefault();pinKey('back');}
+    else if(e.key==='Escape'){e.preventDefault();pinKey('clear');}
+    else if(e.key==='Enter'&&pinBuf.length===6){e.preventDefault();pinSubmit();}
+  });
 }
 function pinKey(k){
   const err=document.getElementById('pinErr');
